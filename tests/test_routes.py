@@ -12,12 +12,15 @@ from tests.factories import AccountFactory
 from service.common import status  # HTTP Status Codes
 from service.models import db, Account, init_db
 from service.routes import app
+from service import app, talisman
 
 DATABASE_URI = os.getenv(
     "DATABASE_URI", "postgresql://postgres:postgres@localhost:5432/postgres"
 )
 
 BASE_URL = "/accounts"
+
+HTTPS_ENVIRON = {'wsgi.url_scheme': 'https'}
 
 
 ######################################################################
@@ -32,6 +35,7 @@ class TestAccountService(TestCase):
         app.config["TESTING"] = True
         app.config["DEBUG"] = False
         app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
+        talisman.force_https = False   # <- desactiva HTTPS para las pruebas
         app.logger.setLevel(logging.CRITICAL)
         init_db(app)
 
@@ -193,3 +197,22 @@ class TestAccountService(TestCase):
         resp = self.client.delete(BASE_URL)  # DELETE sobre /accounts no está permitido
         self.assertEqual(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+
+    def test_security_headers_on_home(self):
+        """It should return security headers on / when using HTTPS"""
+        resp = self.client.get("/", environ_overrides=HTTPS_ENVIRON)
+        # El endpoint debe seguir respondiendo OK
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        # Verificar cabeceras de seguridad esperadas
+        headers = resp.headers
+        self.assertEqual(headers.get("X-Frame-Options"), "SAMEORIGIN")
+        self.assertEqual(headers.get("X-Content-Type-Options"), "nosniff")
+        self.assertEqual(
+            headers.get("Content-Security-Policy"),
+            "default-src 'self'; object-src 'none'"
+        )
+        self.assertEqual(
+            headers.get("Referrer-Policy"),
+            "strict-origin-when-cross-origin"
+        )
