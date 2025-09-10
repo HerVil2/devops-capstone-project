@@ -8,10 +8,19 @@ import sys
 from flask import Flask
 from service import config
 from service.common import log_handlers
+from flask_talisman import Talisman
+from flask_cors import CORS
 
 # Create Flask application
 app = Flask(__name__)
 app.config.from_object(config)
+
+CSP = {"default-src": "'self'", "object-src": "'none'"}
+
+# Enable security headers with Flask-Talisman
+# talisman = Talisman(app)
+talisman = Talisman(app, content_security_policy=CSP)  # HTTPS forzado por defecto
+CORS(app)  # habilita cabeceras CORS, por defecto Access-Control-Allow-Origin: *
 
 # Import the routes After the Flask app is created
 # pylint: disable=wrong-import-position, cyclic-import, wrong-import-order
