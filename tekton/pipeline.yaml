@@ -15,6 +15,7 @@ spec:
     - name: repo-url
     - name: branch
       default: main
+    - name: build-image        # <-- NUEVO parámetro para la imagen a construir y pushear
   tasks:
     - name: init
       workspaces:
@@ -63,8 +64,23 @@ spec:
         name: nose
       params:
         - name: database_uri
-          value: "sqlite:///test.db"
+          value: "postgresql://postgres:postgres@postgresql:5432/postgres"
         - name: args
           value: "-v --with-spec --spec-color"
       runAfter:
         - clone
+
+    # --- BUILD: usa buildah (ClusterTask) ---
+    - name: build
+      workspaces:
+        - name: source
+          workspace: pipeline-workspace
+      taskRef:
+        name: buildah
+        kind: ClusterTask
+      params:
+        - name: IMAGE
+          value: "$(params.build-image)"
+      runAfter:
+        - tests
+        - lint
