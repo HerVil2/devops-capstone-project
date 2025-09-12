@@ -11,7 +11,7 @@ from unittest import TestCase
 from tests.factories import AccountFactory
 from service.common import status  # HTTP Status Codes
 from service.models import db, Account, init_db
-from service.routes import app
+
 from service import app, talisman
 
 DATABASE_URI = os.getenv(
@@ -20,7 +20,7 @@ DATABASE_URI = os.getenv(
 
 BASE_URL = "/accounts"
 
-HTTPS_ENVIRON = {'wsgi.url_scheme': 'https'}
+HTTPS_ENVIRON = {"wsgi.url_scheme": "https"}
 
 
 ######################################################################
@@ -35,7 +35,7 @@ class TestAccountService(TestCase):
         app.config["TESTING"] = True
         app.config["DEBUG"] = False
         app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URI
-        talisman.force_https = False   # <- desactiva HTTPS para las pruebas
+        talisman.force_https = False  # <- desactiva HTTPS para las pruebas
         app.logger.setLevel(logging.CRITICAL)
         init_db(app)
 
@@ -94,9 +94,7 @@ class TestAccountService(TestCase):
         """It should Create a new Account"""
         account = AccountFactory()
         response = self.client.post(
-            BASE_URL,
-            json=account.serialize(),
-            content_type="application/json"
+            BASE_URL, json=account.serialize(), content_type="application/json"
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -121,14 +119,11 @@ class TestAccountService(TestCase):
         """It should not Create an Account when sending the wrong media type"""
         account = AccountFactory()
         response = self.client.post(
-            BASE_URL,
-            json=account.serialize(),
-            content_type="test/html"
+            BASE_URL, json=account.serialize(), content_type="test/html"
         )
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
     # ADD YOUR TEST CASES HERE ...
-
 
     # === READ ===
     def test_read_an_account(self):
@@ -155,7 +150,6 @@ class TestAccountService(TestCase):
         resp = self.client.get(f"{BASE_URL}/0")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
-
     # === LIST ===
     def test_get_account_list(self):
         """It should Get a list of Accounts"""
@@ -164,7 +158,6 @@ class TestAccountService(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         self.assertEqual(len(data), 5)
-
 
     # === UPDATE ===
     def test_update_account(self):
@@ -182,7 +175,6 @@ class TestAccountService(TestCase):
         updated = resp.get_json()
         self.assertEqual(updated["name"], "Something Known")
 
-
     # === DELETE ===
     def test_delete_account(self):
         """It should Delete an Account"""
@@ -190,13 +182,11 @@ class TestAccountService(TestCase):
         resp = self.client.delete(f"{BASE_URL}/{created.id}")
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
 
-
     # === METHOD NOT ALLOWED ===
     def test_method_not_allowed(self):
         """It should not allow an illegal method call"""
         resp = self.client.delete(BASE_URL)  # DELETE sobre /accounts no está permitido
         self.assertEqual(resp.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
 
     def test_security_headers_on_home(self):
         """It should return security headers on / when using HTTPS"""
@@ -210,9 +200,8 @@ class TestAccountService(TestCase):
         self.assertEqual(headers.get("X-Content-Type-Options"), "nosniff")
         self.assertEqual(
             headers.get("Content-Security-Policy"),
-            "default-src 'self'; object-src 'none'"
+            "default-src 'self'; object-src 'none'",
         )
         self.assertEqual(
-            headers.get("Referrer-Policy"),
-            "strict-origin-when-cross-origin"
+            headers.get("Referrer-Policy"), "strict-origin-when-cross-origin"
         )
